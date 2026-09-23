@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "installCommand": "npm ci",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 30,
+      "includeFiles": "{broadcast/DeployFreelanceEscrow.s.sol/11155111/run-latest.json,frontend/lib/abi.json}"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api?__path=:path*" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
+}

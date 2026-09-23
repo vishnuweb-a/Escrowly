@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+.data
+.verification
+node_modules
+dist
+cache
+out
+lib
+reference
+test
+tests

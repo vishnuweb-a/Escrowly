@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Contract, JsonRpcProvider, verifyMessage } from "ethers";
+import { get, put } from "@vercel/blob";
 import { createLogReader } from './log-reader.js';
 const deployment = JSON.parse(
   fs.readFileSync(
@@ -27,6 +28,48 @@ export function configuration(env) {
     ),
   };
 }
+// Project details live in Vercel Blob when a store is connected (serverless
+// filesystems are read-only and ephemeral); otherwise in the local .data folder.
+function metadataStore(env, config) {
+  const key = `${config.chainId}-${config.address.toLowerCase()}`;
+  if (env.BLOB_READ_WRITE_TOKEN) {
+    const options = {
+      access: env.BLOB_ACCESS || "public",
+      token: env.BLOB_READ_WRITE_TOKEN,
+    };
+    return {
+      async read(id) {
+        const found = await get(`metadata/${key}/${id}.json`, {
+          ...options,
+          useCache: false,
+        });
+        return found ? new Response(found.stream).json() : null;
+      },
+      async write(id, metadata) {
+        await put(`metadata/${key}/${id}.json`, JSON.stringify(metadata), {
+          ...options,
+          contentType: "application/json",
+          addRandomSuffix: false,
+          allowOverwrite: true,
+          cacheControlMaxAge: 60,
+        });
+      },
+    };
+  }
+  const directory = path.resolve(".data", key);
+  return {
+    async read(id) {
+      const file = path.join(directory, `${id}.json`);
+      return fs.existsSync(file)
+        ? JSON.parse(fs.readFileSync(file, "utf8"))
+        : null;
+    },
+    async write(id, metadata) {
+      fs.mkdirSync(directory, { recursive: true });
+      fs.writeFileSync(path.join(directory, `${id}.json`), JSON.stringify(metadata));
+    },
+  };
+}
 export function apiMiddleware(env) {
   const config = configuration(env);
   const provider = env.SEPOLIA_RPC_URL
@@ -34,10 +77,7 @@ export function apiMiddleware(env) {
     : null;
   const contract = provider && new Contract(config.address, artifact, provider);
   const readLogs = provider && createLogReader(provider, config.address);
-  const directory = path.resolve(
-    ".data",
-    `${config.chainId}-${config.address.toLowerCase()}`,
-  );
+  const store = metadataStore(env, config);
   const allowed = new Set([
     "eth_chainId",
     "eth_blockNumber",
@@ -109,14 +149,7 @@ export function apiMiddleware(env) {
       }
       const match = url.pathname.match(/^\/api\/metadata\/(\d+)$/);
       if (match) {
-        const file = path.join(directory, `${match[1]}.json`);
-        if (req.method === "GET")
-          return send(
-            200,
-            fs.existsSync(file)
-              ? JSON.parse(fs.readFileSync(file, "utf8"))
-              : null,
-          );
+        if (req.method === "GET") return send(200, await store.read(match[1]));
         if (req.method === "POST" && contract) {
           const { metadata, signature } = body;
           if (
@@ -151,8 +184,7 @@ export function apiMiddleware(env) {
             return send(403, {
               error: "Only the project client can publish details.",
             });
-          fs.mkdirSync(directory, { recursive: true });
-          fs.writeFileSync(file, JSON.stringify(metadata));
+          await store.write(match[1], metadata);
           return send(200, { ok: true });
         }
       }
