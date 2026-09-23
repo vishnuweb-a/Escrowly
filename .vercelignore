@@ -1,13 +1,15 @@
-.env
-.env.*
-!.env.example
-.data
-.verification
-node_modules
-dist
-cache
-out
-lib
-reference
-test
-tests
+# Paths are anchored with a leading "/" so they only match at the repo root
+# (an unanchored "lib" would also strip frontend/lib).
+/.env
+/.env.*
+!/.env.example
+/.data
+/.verification
+/node_modules
+/dist
+/cache
+/out
+/lib
+/reference
+/test
+/tests
