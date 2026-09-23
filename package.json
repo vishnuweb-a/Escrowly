@@ -1,0 +1,39 @@
+{
+  "name": "escrowly",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "start": "node server/start.js",
+    "lint": "eslint frontend server vite.config.js",
+    "test": "node --test tests/*.test.js",
+    "test:browser": "node tests/browser-flow.mjs",
+    "format": "prettier --write frontend server tests vite.config.js eslint.config.js"
+  },
+  "dependencies": {
+    "@fontsource/caveat": "^5.3.0",
+    "@fontsource/inter": "^5.2.5",
+    "@fontsource/nunito-sans": "^5.3.0",
+    "@fontsource/source-serif-4": "^5.3.0",
+    "ethers": "^6.15.0",
+    "lucide-react": "^0.468.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.6.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.28.0",
+    "@playwright/test": "^1.63.0",
+    "@tailwindcss/vite": "^4.1.8",
+    "@vitejs/plugin-react": "^4.5.0",
+    "eslint": "^9.28.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^16.2.0",
+    "prettier": "^3.9.9",
+    "tailwindcss": "^4.1.8",
+    "vite": "^6.3.5"
+  }
+}
